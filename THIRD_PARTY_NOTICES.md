@@ -37,3 +37,5 @@ hardware. No affiliation with OPPO, Xiaomi or their subsidiaries is implied.
 
 JUnit 4 (Eclipse Public License 1.0) and Robolectric (MIT) are test-only
 dependencies retrieved by Gradle and are not bundled into the release APK.
+
+The root LICENSE contains the standard MIT text for license detection. Its grant covers original code and documentation only; it does not relicense the third-party visual assets or the Gradle Wrapper described above.
