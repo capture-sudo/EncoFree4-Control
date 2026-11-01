@@ -1,0 +1,26 @@
+# Build outputs and local IDE/SDK settings
+.gradle/
+.idea/
+**/build/
+local.properties
+*.iml
+*.log
+*.hprof
+.DS_Store
+Thumbs.db
+
+# Signing material and credentials must stay outside the repository.
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.apk
+*.aab
+.env
+.env.*
+keystore.properties
+signing.properties
+secrets/
+private*/

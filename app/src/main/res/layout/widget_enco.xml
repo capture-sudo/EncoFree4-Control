@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" tools:ignore="UselessParent"
+    android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:padding="0dp" android:layoutDirection="ltr">
+    <RelativeLayout android:id="@+id/widget_card"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal">
+        <ImageView android:id="@+id/widget_art"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:importantForAccessibility="no" android:contentDescription="@null" />
+    <!-- Weighted anchor groups map artwork and taps to real launcher bounds; keep the nesting. -->
+    <LinearLayout android:id="@+id/slider_y_extent"
+        android:layout_width="0dp" android:layout_height="0dp"
+        android:layout_alignStart="@id/widget_art" android:layout_alignEnd="@id/widget_art"
+        android:layout_alignTop="@id/widget_art" android:layout_alignBottom="@id/widget_art"
+        android:orientation="vertical" android:weightSum="1" android:importantForAccessibility="no">
+        <LinearLayout android:id="@+id/slider_y_size"
+            android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="bottom" android:weightSum="1" android:importantForAccessibility="no">
+            <LinearLayout android:id="@+id/slider_x_extent"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:orientation="horizontal" android:baselineAligned="false" android:weightSum="1" android:importantForAccessibility="no">
+                <LinearLayout android:id="@+id/slider_x_size"
+                    android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:orientation="horizontal" android:baselineAligned="false" android:gravity="end" android:weightSum="1" android:importantForAccessibility="no">
+                    <FrameLayout android:id="@+id/widget_slider_layer"
+                        android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                        android:importantForAccessibility="noHideDescendants">
+                        <ImageView android:id="@+id/widget_slider_still" android:layout_width="match_parent" android:layout_height="match_parent"
+                            android:scaleType="fitXY" android:visibility="gone" android:importantForAccessibility="no" android:contentDescription="@null" />
+                        <ImageView android:id="@+id/widget_slider_icons" android:layout_width="match_parent" android:layout_height="match_parent"
+                            android:scaleType="fitXY" android:importantForAccessibility="no" android:contentDescription="@null" />
+                    </FrameLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/connection_y_extent"
+        android:layout_width="0dp" android:layout_height="0dp"
+        android:layout_alignStart="@id/widget_art" android:layout_alignEnd="@id/widget_art"
+        android:layout_alignTop="@id/widget_art" android:layout_alignBottom="@id/widget_art"
+        android:orientation="vertical" android:weightSum="1" android:importantForAccessibility="no">
+        <LinearLayout android:id="@+id/connection_y_size"
+            android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="bottom" android:weightSum="1" android:importantForAccessibility="no">
+            <LinearLayout android:id="@+id/connection_x_extent"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:orientation="horizontal" android:baselineAligned="false" android:weightSum="1" android:importantForAccessibility="no">
+                <LinearLayout android:id="@+id/connection_x_size"
+                    android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:orientation="horizontal" android:baselineAligned="false" android:gravity="end" android:weightSum="1" android:importantForAccessibility="no">
+                    <TextView android:id="@+id/widget_connection"
+                        android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                        android:focusable="true" android:background="@drawable/widget_touch" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/battery_y_extent"
+        android:layout_width="0dp" android:layout_height="0dp"
+        android:layout_alignStart="@id/widget_art" android:layout_alignEnd="@id/widget_art"
+        android:layout_alignTop="@id/widget_art" android:layout_alignBottom="@id/widget_art"
+        android:orientation="vertical" android:weightSum="1" android:importantForAccessibility="no">
+        <LinearLayout android:id="@+id/battery_y_size"
+            android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="bottom" android:weightSum="1" android:importantForAccessibility="no">
+            <LinearLayout android:id="@+id/battery_x_extent"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:orientation="horizontal" android:baselineAligned="false" android:weightSum="1" android:importantForAccessibility="no">
+                <LinearLayout android:id="@+id/battery_x_size"
+                    android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:orientation="horizontal" android:baselineAligned="false" android:gravity="end" android:weightSum="1" android:importantForAccessibility="no">
+                    <TextView android:id="@+id/widget_battery"
+                        android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                        android:focusable="true" android:background="@drawable/widget_touch" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/anc_y_extent"
+        android:layout_width="0dp" android:layout_height="0dp"
+        android:layout_alignStart="@id/widget_art" android:layout_alignEnd="@id/widget_art"
+        android:layout_alignTop="@id/widget_art" android:layout_alignBottom="@id/widget_art"
+        android:orientation="vertical" android:weightSum="1" android:importantForAccessibility="no">
+        <LinearLayout android:id="@+id/anc_y_size"
+            android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="bottom" android:weightSum="1" android:importantForAccessibility="no">
+            <LinearLayout android:id="@+id/anc_x_extent"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:orientation="horizontal" android:baselineAligned="false" android:weightSum="1" android:importantForAccessibility="no">
+                <LinearLayout android:id="@+id/anc_x_size"
+                    android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:orientation="horizontal" android:baselineAligned="false" android:gravity="end" android:weightSum="1" android:importantForAccessibility="no">
+                    <TextView android:id="@+id/widget_anc"
+                        android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                        android:focusable="true" android:background="@drawable/widget_touch" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/transparency_y_extent"
+        android:layout_width="0dp" android:layout_height="0dp"
+        android:layout_alignStart="@id/widget_art" android:layout_alignEnd="@id/widget_art"
+        android:layout_alignTop="@id/widget_art" android:layout_alignBottom="@id/widget_art"
+        android:orientation="vertical" android:weightSum="1" android:importantForAccessibility="no">
+        <LinearLayout android:id="@+id/transparency_y_size"
+            android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="bottom" android:weightSum="1" android:importantForAccessibility="no">
+            <LinearLayout android:id="@+id/transparency_x_extent"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:orientation="horizontal" android:baselineAligned="false" android:weightSum="1" android:importantForAccessibility="no">
+                <LinearLayout android:id="@+id/transparency_x_size"
+                    android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:orientation="horizontal" android:baselineAligned="false" android:gravity="end" android:weightSum="1" android:importantForAccessibility="no">
+                    <TextView android:id="@+id/widget_transparency"
+                        android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                        android:focusable="true" android:background="@drawable/widget_touch" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+    </RelativeLayout>
+</FrameLayout>
