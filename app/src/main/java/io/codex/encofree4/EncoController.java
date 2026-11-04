@@ -433,11 +433,15 @@ final class EncoController {
         if (manager != null) {
             int[] profiles = {BluetoothProfile.A2DP, BluetoothProfile.HEADSET};
             for (int profile : profiles) {
-                for (BluetoothDevice device : manager.getConnectedDevices(profile)) {
-                    String name = device.getName();
-                    if (name != null && EncoModels.isSupported(name)) {
-                        return device;
+                try {
+                    for (BluetoothDevice device : manager.getConnectedDevices(profile)) {
+                        String name = device.getName();
+                        if (name != null && EncoModels.isSupported(name)) {
+                            return device;
+                        }
                     }
+                } catch (RuntimeException ignored) {
+                    // Profile unavailable on this host; fall through to the bonded list.
                 }
             }
         }

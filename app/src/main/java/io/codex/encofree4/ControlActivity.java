@@ -1096,14 +1096,18 @@ public final class ControlActivity extends Activity implements EncoController.Li
                 return null;
             }
             // Prefer the connected model; several Enco models may be bonded at once.
-            int[] profiles = {BluetoothProfile.A2DP, BluetoothProfile.HEADSET};
-            for (int profile : profiles) {
-                for (BluetoothDevice device : manager.getConnectedDevices(profile)) {
-                    String name = device.getName();
-                    if (EncoModels.isSupported(name)) {
-                        return name;
+            try {
+                int[] profiles = {BluetoothProfile.A2DP, BluetoothProfile.HEADSET};
+                for (int profile : profiles) {
+                    for (BluetoothDevice device : manager.getConnectedDevices(profile)) {
+                        String name = device.getName();
+                        if (EncoModels.isSupported(name)) {
+                            return name;
+                        }
                     }
                 }
+            } catch (RuntimeException ignored) {
+                // Host-side tests expose no Bluetooth profile support; use the bonded list.
             }
             for (BluetoothDevice device : adapter.getBondedDevices()) {
                 String name = device.getName();
