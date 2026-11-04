@@ -923,13 +923,11 @@ public final class ControlActivity extends Activity implements EncoController.Li
             requestNoiseMode(EncoProtocol.MODE_ANC);
             Toast.makeText(this, getString(R.string.noise_cancel), Toast.LENGTH_SHORT).show();
         } else if (state.confirmedMode == EncoProtocol.MODE_ANC) {
-            if (confirmedDepth == 4) {
-                requestNoiseMode(EncoProtocol.MODE_TRANSPARENCY);
-                Toast.makeText(this, getString(R.string.transparency), Toast.LENGTH_SHORT).show();
-            } else {
-                controller.setNoiseDepth(4);
-                Toast.makeText(this, getString(R.string.depth_4), Toast.LENGTH_SHORT).show();
-            }
+            requestNoiseMode(EncoProtocol.MODE_ADAPTIVE);
+            Toast.makeText(this, getString(R.string.adaptive), Toast.LENGTH_SHORT).show();
+        } else if (state.confirmedMode == EncoProtocol.MODE_ADAPTIVE) {
+            requestNoiseMode(EncoProtocol.MODE_TRANSPARENCY);
+            Toast.makeText(this, getString(R.string.transparency), Toast.LENGTH_SHORT).show();
         } else {
             requestNoiseMode(EncoProtocol.MODE_OFF);
             Toast.makeText(this, getString(R.string.noise_off), Toast.LENGTH_SHORT).show();
@@ -1186,6 +1184,8 @@ public final class ControlActivity extends Activity implements EncoController.Li
                 return getString(R.string.transparency);
             case EncoProtocol.MODE_ANC:
                 return getString(R.string.noise_cancel);
+            case EncoProtocol.MODE_ADAPTIVE:
+                return getString(R.string.adaptive);
             default:
                 return "--";
         }

@@ -19,6 +19,7 @@ final class EncoProtocol {
     static final int MODE_OFF = 0;
     static final int MODE_TRANSPARENCY = 1;
     static final int MODE_ANC = 2;
+    static final int MODE_ADAPTIVE = 3;
     private static final int WIRE_MODE_OFF = 0x01;
     private static final int WIRE_MODE_ANC = 0x02;
     private static final int WIRE_MODE_TRANSPARENCY = 0x04;
@@ -27,6 +28,15 @@ final class EncoProtocol {
     }
 
     static byte[] setNoiseModeFrame(int mode, int sequence) {
+        if (mode == MODE_ADAPTIVE) {
+            // Adaptive sits at bitmap bit 12, so the mode field carries a little-endian
+            // 16-bit bitmap instead of the single-byte enum the older modes use.
+            return singleFrame(
+                    CMD_SET_NOISE_MODE,
+                    new byte[]{0x01, 0x01, 0x00, 0x10},
+                    sequence
+            );
+        }
         int mask;
         switch (mode) {
             case MODE_OFF:
@@ -311,6 +321,9 @@ final class EncoProtocol {
             case 2:
             case 8:
                 return MODE_TRANSPARENCY;
+            case 12:
+                // Adaptive: a major mode of its own, not one of the cancellation steps.
+                return MODE_ADAPTIVE;
             default:
                 // Unknown bitmap position: do not guess between the three panel modes,
                 // so the panel keeps showing "not read" instead of a wrong mode. The

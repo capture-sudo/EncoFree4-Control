@@ -298,9 +298,6 @@ final class EncoController {
                 }, 350);
                 scheduleSessionTask(established, () -> send(established,
                         EncoProtocol.multiBatteryRequestFrame(established.nextSequence())), 1400);
-                if (PROBE) {
-                    scheduleSessionTask(established, () -> probeSweep(established), 4500);
-                }
                 synchronized (stateLock) {
                     if (session == established && isCurrentLocked(token)) {
                         sessionTasks.add(ioExecutor.scheduleWithFixedDelay(

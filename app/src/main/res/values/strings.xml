@@ -27,6 +27,7 @@
     <string name="noise_control">噪声控制</string>
     <string name="transparency">通透</string>
     <string name="noise_cancel">降噪</string>
+    <string name="adaptive">自适应</string>
     <string name="noise_off">关闭</string>
     <string name="mode_confirmation_timeout">未收到耳机的切换确认，请重试</string>
     <string name="retry">重试</string>
@@ -39,7 +40,7 @@
     <string name="depth_1">深度降噪</string>
     <string name="depth_2">中度降噪</string>
     <string name="depth_3">轻度降噪</string>
-    <string name="depth_4">自适应</string>
+    <string name="depth_4">智能切换</string>
     <string name="mode_reading">正在读取当前模式</string>
     <string name="mode_read_failed_tag">当前模式未读取</string>
     <string name="mode_read_failed">未读到耳机当前模式，请刷新</string>

@@ -182,6 +182,16 @@ connection, so the three-mode panel needs no model-specific branch.
   values keep working, but `0x02` means "cancellation, keep the remembered step", so
   a panel that only sends `0x02` cannot change or show the step. The three-state
   mapping already folds bits 4..7 into cancellation.
+- On X4 the four steps are, in ascending bitmap order: bit 4 deep cancellation
+  (real-time), bit 5 medium, bit 6 light, bit 7 adaptive/automatic switching.
+  Verified by selecting each step in the vendor app on a second phone and reading
+  the bitmap back, so these are the vendor's own labels.
+- Adaptive is a fourth major mode, not a cancellation step. It sits at bitmap bit
+  12 (`0x1000`): the `0x010C` reply carries `00 10` and the set command carries
+  the little-endian 16-bit bitmap as `01 01 00 10`. The earbud touch gesture
+  cycles off (bit 3) → cancellation (bit 4..7) → adaptive (bit 12) →
+  transparency (bit 8). Values `05`/`06`/`07`/`09` in the mode field are accepted
+  but land on other modes, so this field is a bitmap rather than an enum.
 - The legacy `02 01` selector of `0x010C` returns a constant `0x0006`
   (bits 1 and 2) on X4 and does not describe the three-state mode. It most
   likely carries ANC depth/adaptive state; the write path for those submodes is
