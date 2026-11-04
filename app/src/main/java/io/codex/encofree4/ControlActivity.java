@@ -131,7 +131,6 @@ public final class ControlActivity extends Activity implements EncoController.Li
     private BatteryIndicatorView batteryCase;
     private boolean bothEarbudsInCase;
     private TextView transparencyButton;
-    private int noiseDepth = 1;
     private int confirmedDepth = -1;
     private TextView ancButton;
     private TextView offButton;
@@ -811,8 +810,8 @@ public final class ControlActivity extends Activity implements EncoController.Li
                 EncoProtocol.MODE_OFF
         );
         modeButtons = new TextView[]{offButton, transparencyButton, ancButton};
-        // Long press walks the firmware's four cancellation steps (state bitmap bits 4..7).
-        ancButton.setOnLongClickListener(view -> cycleNoiseDepth());
+        // Long press mirrors the earbud touch gesture across the four major modes.
+        ancButton.setOnLongClickListener(view -> cycleNoiseMode());
 
         selector.addView(transparencyButton, weightedButton(0));
         selector.addView(ancButton, weightedButton(1));
@@ -912,17 +911,52 @@ public final class ControlActivity extends Activity implements EncoController.Li
         mainHandler.postDelayed(modeTimeoutTask, MODE_CONFIRM_TIMEOUT_MS);
     }
 
-    /** Long-press handler on the cancellation button: 1 → 2 → 3 → 4 → 1. */
-    private boolean cycleNoiseDepth() {
+    /**
+     * Long-press handler on the cancellation button, mirroring the earbud's own
+     * long-press gesture: cancellation → adaptive → transparency → off → cancellation.
+     */
+    private boolean cycleNoiseMode() {
         if (!canRender() || !connected || controller == null) {
             return true;
         }
-        noiseDepth = noiseDepth >= 4 ? 1 : noiseDepth + 1;
-        if (controller.setNoiseDepth(noiseDepth)) {
-            Toast.makeText(this, getString(R.string.noise_cancel) + " " + noiseDepth + " / 4",
-                    Toast.LENGTH_SHORT).show();
+        if (state.confirmedMode == EncoProtocol.MODE_OFF) {
+            requestNoiseMode(EncoProtocol.MODE_ANC);
+            Toast.makeText(this, getString(R.string.noise_cancel), Toast.LENGTH_SHORT).show();
+        } else if (state.confirmedMode == EncoProtocol.MODE_ANC) {
+            if (confirmedDepth == 4) {
+                requestNoiseMode(EncoProtocol.MODE_TRANSPARENCY);
+                Toast.makeText(this, getString(R.string.transparency), Toast.LENGTH_SHORT).show();
+            } else {
+                controller.setNoiseDepth(4);
+                Toast.makeText(this, getString(R.string.depth_4), Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            requestNoiseMode(EncoProtocol.MODE_OFF);
+            Toast.makeText(this, getString(R.string.noise_off), Toast.LENGTH_SHORT).show();
         }
         return true;
+    }
+
+    /**
+     * Names for the four cancellation steps, in ascending bitmap order.
+     *
+     * <p>Calibrated on Enco X4 firmware 116.116.100 by selecting each step in the
+     * vendor app on a second phone and reading the bitmap back, so these are the
+     * vendor's own labels rather than inferred ones.
+     */
+    private String depthLabel(int depth) {
+        switch (depth) {
+            case 1:
+                return getString(R.string.depth_1);
+            case 2:
+                return getString(R.string.depth_2);
+            case 3:
+                return getString(R.string.depth_3);
+            case 4:
+                return getString(R.string.depth_4);
+            default:
+                return "";
+        }
     }
 
     private void renderMode(int mode) {
@@ -983,8 +1017,7 @@ public final class ControlActivity extends Activity implements EncoController.Li
             case CURRENT:
                 noiseModeSummary.setText(
                         state.confirmedMode == EncoProtocol.MODE_ANC && confirmedDepth > 0
-                                ? getString(R.string.mode_current_depth,
-                                        modeName(state.confirmedMode), confirmedDepth)
+                                ? getString(R.string.mode_current, depthLabel(confirmedDepth))
                                 : getString(R.string.mode_current, modeName(state.confirmedMode)));
                 break;
             case READ_FAILED:

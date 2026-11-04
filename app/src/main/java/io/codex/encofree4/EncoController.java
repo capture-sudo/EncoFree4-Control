@@ -755,6 +755,39 @@ final class EncoController {
                 return;
             }
         }
+        // Adaptive sits at bitmap bit 12, which does not fit a single payload byte, so its
+        // wire encoding is unknown. Probe the little-endian bitmap form and the remaining
+        // small enum values; whichever answers with bit 12 is the one to use.
+        byte[][] adaptiveCandidates = {
+                {0x01, 0x01, 0x00, 0x10},
+                {0x01, 0x01, 0x05},
+                {0x01, 0x01, 0x06},
+                {0x01, 0x01, 0x07},
+                {0x01, 0x01, 0x09},
+        };
+        for (byte[] payload : adaptiveCandidates) {
+            if (!isActive(target)) {
+                return;
+            }
+            try {
+                Log.d(PROBE_TAG, "PROBE adaptive " + hex(payload));
+                send(target, EncoProtocol.singleFrame(
+                        EncoProtocol.CMD_SET_NOISE_MODE,
+                        payload,
+                        target.nextSequence()));
+                Thread.sleep(300);
+                send(target, EncoProtocol.singleFrame(
+                        EncoProtocol.CMD_GET_CURRENT_NOISE_MODE,
+                        new byte[]{0x01, 0x01},
+                        target.nextSequence()));
+                Thread.sleep(300);
+            } catch (IOException error) {
+                return;
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
         try {
             send(target, EncoProtocol.singleFrame(
                     EncoProtocol.CMD_SET_NOISE_MODE,
