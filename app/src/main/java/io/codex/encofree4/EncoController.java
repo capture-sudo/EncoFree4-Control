@@ -50,6 +50,13 @@ final class EncoController {
         void onBattery(EncoProtocol.Battery battery);
         void onEarStatus(boolean bothInCase);
         void onNoiseMode(int mode);
+
+        /**
+         * Called with the cancellation step (1..4) when the reported bitmap selects one.
+         * A default no-op keeps existing listeners and host-side stubs source compatible.
+         */
+        default void onNoiseDepth(int depth) {
+        }
     }
 
     private final Context context;
@@ -503,9 +510,16 @@ final class EncoController {
                     if (earStatus != null) {
                         postSessionCallback(target, () -> listener.onEarStatus(earStatus.bothInCase()));
                     }
-                    int mode = EncoProtocol.parseNoiseMode(frame);
-                    if (mode >= 0) {
-                        postSessionCallback(target, () -> listener.onNoiseMode(mode));
+                    int mask = EncoProtocol.parseNoiseMask(frame);
+                    if (mask > 0) {
+                        final int mode = EncoProtocol.modeFromMask(mask);
+                        final int depth = EncoProtocol.depthFromMask(mask);
+                        if (mode >= 0) {
+                            postSessionCallback(target, () -> listener.onNoiseMode(mode));
+                            if (depth > 0) {
+                                postSessionCallback(target, () -> listener.onNoiseDepth(depth));
+                            }
+                        }
                     }
                 }
             } catch (IOException | RuntimeException ignored) {

@@ -132,6 +132,7 @@ public final class ControlActivity extends Activity implements EncoController.Li
     private boolean bothEarbudsInCase;
     private TextView transparencyButton;
     private int noiseDepth = 1;
+    private int confirmedDepth = -1;
     private TextView ancButton;
     private TextView offButton;
     private TextView[] modeButtons;
@@ -300,6 +301,15 @@ public final class ControlActivity extends Activity implements EncoController.Li
             hideStatus();
         }
         renderMode(state.confirmedMode);
+    }
+
+    @Override
+    public void onNoiseDepth(int depth) {
+        if (!canRender() || !connected || depth <= 0) {
+            return;
+        }
+        confirmedDepth = depth;
+        renderModeTag();
     }
 
     @Override
@@ -971,7 +981,11 @@ public final class ControlActivity extends Activity implements EncoController.Li
                         ? R.string.mode_switch_retry_tag : R.string.mode_read_retry_tag);
                 break;
             case CURRENT:
-                noiseModeSummary.setText(getString(R.string.mode_current, modeName(state.confirmedMode)));
+                noiseModeSummary.setText(
+                        state.confirmedMode == EncoProtocol.MODE_ANC && confirmedDepth > 0
+                                ? getString(R.string.mode_current_depth,
+                                        modeName(state.confirmedMode), confirmedDepth)
+                                : getString(R.string.mode_current, modeName(state.confirmedMode)));
                 break;
             case READ_FAILED:
                 noiseModeSummary.setText(R.string.mode_read_failed_tag);

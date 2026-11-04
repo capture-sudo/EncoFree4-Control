@@ -162,7 +162,14 @@ final class EncoProtocol {
         return best;
     }
 
-    static int parseNoiseMode(byte[] data) {
+    /**
+     * Returns the raw noise-state bitmap carried by {@code 0x0204} or {@code 0x810C},
+     * or {@code -1} when the frame carries none.
+     *
+     * <p>Higher layers need the bitmap itself, not only the folded three-state mode,
+     * so the panel can report which cancellation step is active.
+     */
+    static int parseNoiseMask(byte[] data) {
         if (data == null || data.length < 9) {
             return -1;
         }
@@ -191,10 +198,7 @@ final class EncoProtocol {
                     mask |= (payload[index] & 0xFF) << ((index - 3) * 8);
                 }
                 if (mask != 0) {
-                    int mode = modeFromProtocolIndex(Integer.numberOfTrailingZeros(mask));
-                    if (mode >= 0) {
-                        return mode;
-                    }
+                    return mask;
                 }
             } else if (command == NOISE_MODE_RESPONSE) {
                 // Accept the response marker at the start or after one zero status byte.
@@ -212,15 +216,33 @@ final class EncoProtocol {
                         mask |= (payload[index] & 0xFF) << ((index - marker - 2) * 8);
                     }
                     if (mask != 0) {
-                        int mode = modeFromProtocolIndex(Integer.numberOfTrailingZeros(mask));
-                        if (mode >= 0) {
-                            return mode;
-                        }
+                        return mask;
                     }
                 }
             }
         }
         return -1;
+    }
+
+    static int parseNoiseMode(byte[] data) {
+        int mask = parseNoiseMask(data);
+        if (mask <= 0) {
+            return -1;
+        }
+        return modeFromMask(mask);
+    }
+
+    static int modeFromMask(int mask) {
+        if (mask <= 0) {
+            return -1;
+        }
+        return modeFromProtocolIndex(Integer.numberOfTrailingZeros(mask));
+    }
+
+    /** 1..4 for cancellation bitmap bits 4..7, otherwise {@code -1}. */
+    static int depthFromMask(int mask) {
+        int bits = mask & 0xF0;
+        return bits == 0 ? -1 : Integer.numberOfTrailingZeros(bits) - 3;
     }
 
     static EarStatus parseEarStatus(byte[] data) {

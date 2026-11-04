@@ -22,6 +22,7 @@ final class EncoSession implements EncoController.Listener {
     private final PanelState state = new PanelState(-1);
     private EncoController controller;
     private boolean connected, connecting, keepingWidgets, bothInCase, refreshing;
+    private int noiseDepth = -1;
     private boolean interactive = true, pendingFromWidget;
     private String message = "已断开";
     private final Runnable modeTimeout = this::expireMode;
@@ -87,6 +88,7 @@ final class EncoSession implements EncoController.Listener {
             if (state.battery != null) client.listener.onBattery(state.battery);
             client.listener.onEarStatus(bothInCase);
             if (state.confirmedMode >= 0) client.listener.onNoiseMode(state.confirmedMode);
+            if (noiseDepth > 0) client.listener.onNoiseDepth(noiseDepth);
         }
     }
 
@@ -169,6 +171,7 @@ final class EncoSession implements EncoController.Listener {
         if (!value) {
             state.disconnect();
             bothInCase = false;
+            noiseDepth = -1;
             refreshing = false;
             handler.removeCallbacks(modeTimeout);
             handler.removeCallbacks(refreshTimeout);
@@ -198,5 +201,10 @@ final class EncoSession implements EncoController.Listener {
         }
         for (Client c : new ArrayList<>(clients)) if (!c.closed) c.listener.onNoiseMode(mode);
         publishWidgets();
+    }
+    @Override public void onNoiseDepth(int depth) {
+        if (!connected || depth <= 0) return;
+        noiseDepth = depth;
+        for (Client c : new ArrayList<>(clients)) if (!c.closed) c.listener.onNoiseDepth(depth);
     }
 }
