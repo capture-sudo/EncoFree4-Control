@@ -1,8 +1,8 @@
 # Enco Free4 Control
 
-无需 Root 的 **OPPO Enco Free4** Android 控制面板与桌面小部件。
+无需 Root 的 **OPPO Enco Free4 / Enco X4** Android 控制面板与桌面小部件。
 
-An unofficial Android controller for OPPO Enco Free4: noise control, battery status, media volume and glass-style home screen widgets.
+An unofficial Android controller for OPPO Enco Free4 and Enco X4: noise control, battery status, media volume and glass-style home screen widgets.
 
 [下载 2.0.0 APK](https://github.com/uninner/EncoFree4-Control/releases/latest) · [更新记录](CHANGELOG.md) · [隐私说明](PRIVACY.md) · [协议笔记](docs/PROTOCOL.md)
 
@@ -27,7 +27,7 @@ An unofficial Android controller for OPPO Enco Free4: noise control, battery sta
 
 ## 安装与使用
 
-要求 **Android 14 或更新版本**。目前面向 OPPO Enco Free4，其他耳机型号未验证。
+要求 **Android 14 或更新版本**。目前支持 OPPO Enco Free4 与 OPPO Enco X4（固件 116.116.100 实测通过），其他耳机型号未验证。
 
 1. 在 [Releases](https://github.com/uninner/EncoFree4-Control/releases) 下载 APK 并安装。
 2. 在系统蓝牙设置中配对并连接耳机。

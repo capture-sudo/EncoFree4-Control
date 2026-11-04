@@ -634,7 +634,7 @@ public final class ControlActivity extends Activity implements EncoController.Li
 
         // 优先使用带温润高光与细腻阴影的高清渲染图 / 精致立体矢量图
         ImageView render = new ImageView(this);
-        render.setImageResource(R.drawable.enco_free4_device);
+        render.setImageResource(R.drawable.enco_device);
         render.setScaleType(ImageView.ScaleType.FIT_CENTER);
         FrameLayout.LayoutParams renderParams = new FrameLayout.LayoutParams(
                 dp(142),

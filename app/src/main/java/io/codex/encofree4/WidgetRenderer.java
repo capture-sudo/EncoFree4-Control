@@ -30,7 +30,7 @@ final class WidgetRenderer {
         Bitmap bitmap=Bitmap.createBitmap(Math.max(1,Math.round(g.width*scale)),Math.max(1,Math.round(g.height*scale)),Bitmap.Config.ARGB_8888);
         bitmap.setDensity(context.getResources().getDisplayMetrics().densityDpi);
         Canvas c=new Canvas(bitmap); c.scale(scale,scale);
-        if(device==null) device=BitmapFactory.decodeResource(context.getResources(),R.drawable.enco_free4_device);
+        if(device==null) device=BitmapFactory.decodeResource(context.getResources(),R.drawable.enco_device);
         new WidgetRenderer(c,g,state).draw(position,localSlider);
         return bitmap;
     }

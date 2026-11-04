@@ -34,10 +34,11 @@ final class EncoController {
      * Dumps every TX/RX frame to logcat under {@link #PROBE_TAG} so a new model can be
      * characterised with {@code adb logcat -s EncoProbe}. Frames contain commands,
      * battery levels and mode bitmaps; they never contain Bluetooth addresses.
-     * Flip to {@code false} once the model is verified.
+     * Enabled for debug builds only.
      */
-    static final boolean PROBE = true;
+    static final boolean PROBE = BuildConfig.PROBE;
     private static final String PROBE_TAG = "EncoProbe";
+    private static boolean probeSwept;
     private static final UUID SERVICE_UUID = UUID.fromString(
             "0000079A-D102-11E1-9B23-00025B00A5A5"
     );
@@ -265,6 +266,9 @@ final class EncoController {
                 }, 350);
                 scheduleSessionTask(established, () -> send(established,
                         EncoProtocol.multiBatteryRequestFrame(established.nextSequence())), 1400);
+                if (PROBE) {
+                    scheduleSessionTask(established, () -> probeSweep(established), 4500);
+                }
                 synchronized (stateLock) {
                     if (session == established && isCurrentLocked(token)) {
                         sessionTasks.add(ioExecutor.scheduleWithFixedDelay(
@@ -647,6 +651,79 @@ final class EncoController {
             frame.write(current);
         }
         return frame.toByteArray();
+    }
+
+    /**
+     * Development-only, read-only sweep used to characterise an unverified model.
+     *
+     * <p>It enumerates the {@code 0x010C} sub-command selectors so that every noise-related
+     * field the firmware exposes shows up in the frame log. It runs at most once per process,
+     * and only in debug builds. The write sweep at the end briefly changes the earbud mode and
+     * restores cancellation afterwards.
+     */
+    private void probeSweep(Session target) {
+        synchronized (EncoController.class) {
+            if (probeSwept) {
+                return;
+            }
+            probeSwept = true;
+        }
+        byte[][] selectors = {
+                {0x01, 0x01}, {0x01, 0x02}, {0x01, 0x03}, {0x01, 0x04}, {0x01, 0x05},
+                {0x02, 0x01}, {0x03, 0x01}, {0x04, 0x01}, {0x05, 0x01},
+        };
+        for (byte[] selector : selectors) {
+            if (!isActive(target)) {
+                return;
+            }
+            try {
+                Log.d(PROBE_TAG, "PROBE selector " + hex(selector));
+                send(target, EncoProtocol.singleFrame(
+                        EncoProtocol.CMD_GET_CURRENT_NOISE_MODE,
+                        selector,
+                        target.nextSequence()));
+                Thread.sleep(200);
+            } catch (IOException error) {
+                return;
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+        // Write sweep: probe candidate mode values the three-state panel never sends,
+        // then read the bitmap back and finally restore cancellation.
+        int[] candidates = {0x08, 0x10, 0x20, 0x40};
+        for (int candidate : candidates) {
+            if (!isActive(target)) {
+                return;
+            }
+            try {
+                Log.d(PROBE_TAG, "PROBE set-mode 0x" + Integer.toHexString(candidate));
+                send(target, EncoProtocol.singleFrame(
+                        EncoProtocol.CMD_SET_NOISE_MODE,
+                        new byte[]{0x01, 0x01, (byte) candidate},
+                        target.nextSequence()));
+                Thread.sleep(300);
+                send(target, EncoProtocol.singleFrame(
+                        EncoProtocol.CMD_GET_CURRENT_NOISE_MODE,
+                        new byte[]{0x01, 0x01},
+                        target.nextSequence()));
+                Thread.sleep(300);
+            } catch (IOException error) {
+                return;
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+        try {
+            send(target, EncoProtocol.singleFrame(
+                    EncoProtocol.CMD_SET_NOISE_MODE,
+                    new byte[]{0x01, 0x01, 0x02},
+                    target.nextSequence()));
+        } catch (IOException ignored) {
+            // Restoring the default mode is best effort.
+        }
     }
 
     private static String hex(byte[] data) {

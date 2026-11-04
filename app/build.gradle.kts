@@ -28,8 +28,17 @@ android {
         }
     }
 
+    buildFeatures {
+        // PROBE gates the TX/RX frame dump used to characterise a new headset model.
+        buildConfig = true
+    }
+
     buildTypes {
+        debug {
+            buildConfigField("boolean", "PROBE", "true")
+        }
         release {
+            buildConfigField("boolean", "PROBE", "false")
             isMinifyEnabled = false
             if (hasOriginalSigning) signingConfig = signingConfigs.getByName("original")
         }
