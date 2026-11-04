@@ -138,9 +138,9 @@ public final class ControlActivity extends Activity implements EncoController.Li
     private TextView adaptiveButton;
     private ImageView deviceArt;
     private TextView earLabel;
+    private View noiseSection;
     private View colorSwatch;
     private boolean leftInBox, rightInBox, hasEarState, earDetailSeen;
-    private static final int[] COLOR_DOTS = {0xFFF4F4F4, 0xFFB7B2C7, 0xFFF0D2CC};
     private int colorIndex;
     private int confirmedDepth = -1;
     private TextView ancButton;
@@ -291,6 +291,10 @@ public final class ControlActivity extends Activity implements EncoController.Li
         if (adaptiveButton != null) {
             adaptiveButton.setVisibility(
                     EncoModels.hasAdaptiveMode(name) ? View.VISIBLE : View.GONE);
+        }
+        if (noiseSection != null) {
+            noiseSection.setVisibility(
+                    EncoModels.hasNoiseControl(name) ? View.VISIBLE : View.GONE);
         }
         renderDeviceArt();
     }
@@ -526,7 +530,9 @@ public final class ControlActivity extends Activity implements EncoController.Li
         content.addView(volumeCard);
 
         // Glass mode controls retain the existing three-button layout.
-        View noiseSection = createNoiseSection();
+        noiseSection = createNoiseSection();
+        noiseSection.setVisibility(
+                EncoModels.hasNoiseControl(currentDeviceName()) ? View.VISIBLE : View.GONE);
         content.addView(noiseSection);
 
         // 4. 底部杂讯清理：移除原先突兀红字，并将“更多设置”改为极简扁平化底栏
@@ -758,13 +764,30 @@ public final class ControlActivity extends Activity implements EncoController.Li
         }
         GradientDrawable dot = new GradientDrawable();
         dot.setShape(GradientDrawable.OVAL);
-        dot.setColor(COLOR_DOTS[colorIndex]);
+        dot.setColor(colorDot(deviceColor()));
         dot.setStroke(dp(1), 0x66FFFFFF);
         colorSwatch.setBackground(dot);
     }
 
+    /** Swatch fill for a colour key, shared by every supported model. */
+    private int colorDot(String color) {
+        switch (color) {
+            case "purple":
+                return 0xFFB7B2C7;
+            case "pink":
+                return 0xFFF0D2CC;
+            case "grey":
+                return 0xFF4A4F55;
+            case "sea":
+                return 0xFFC7D8E8;
+            default:
+                return 0xFFF4F4F4;
+        }
+    }
+
     private void cycleDeviceColor() {
-        colorIndex = (colorIndex + 1) % EncoModels.X4_COLORS.length;
+        String[] colors = EncoModels.colorsFor(currentDeviceName());
+        colorIndex = (colorIndex + 1) % colors.length;
         renderDeviceArt();
         renderSwatch();
         getSharedPreferences("enco_widgets", MODE_PRIVATE)
@@ -777,14 +800,16 @@ public final class ControlActivity extends Activity implements EncoController.Li
     }
 
     private String deviceColor() {
-        return EncoModels.X4_COLORS[colorIndex];
+        String[] colors = EncoModels.colorsFor(currentDeviceName());
+        return colors[Math.floorMod(colorIndex, colors.length)];
     }
 
     private int loadDeviceColor() {
+        String[] colors = EncoModels.colorsFor(currentDeviceName());
         String saved = getSharedPreferences("enco_widgets", MODE_PRIVATE)
-                .getString("device_color", EncoModels.X4_COLORS[0]);
-        for (int i = 0; i < EncoModels.X4_COLORS.length; i++) {
-            if (EncoModels.X4_COLORS[i].equals(saved)) {
+                .getString("device_color", colors[0]);
+        for (int i = 0; i < colors.length; i++) {
+            if (colors[i].equals(saved)) {
                 return i;
             }
         }

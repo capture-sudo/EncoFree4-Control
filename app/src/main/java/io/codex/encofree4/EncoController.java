@@ -273,6 +273,15 @@ final class EncoController {
                 fail(token, context.getString(R.string.pair_hint), false);
                 return;
             }
+            // Remember the model we last talked to: widgets keep its artwork while the
+            // headset is disconnected instead of falling back to the generic drawing.
+            String model = device.getName();
+            if (model != null) {
+                context.getSharedPreferences("enco_widgets", Context.MODE_PRIVATE)
+                        .edit()
+                        .putString("device_name", model)
+                        .apply();
+            }
             BluetoothSocket newSocket = openControlSocket(device, token);
             Session established = new Session(token, newSocket);
             boolean accepted;

@@ -46,24 +46,25 @@ final class WidgetRenderer {
             device=BitmapFactory.decodeResource(context.getResources(),EncoModels.deviceImage(artName,artColor,artInCase));
             deviceKey=artKey;
         }
-        new WidgetRenderer(c,g,state).draw(position,localSlider);
+        new WidgetRenderer(c,g,state,EncoModels.hasNoiseControl(artName)).draw(position,localSlider);
         return bitmap;
     }
     static Bitmap controlIcons(Context context,WidgetGeometry g,WidgetSnapshot state,float scale) {
         Bitmap bitmap=Bitmap.createBitmap(Math.max(1,Math.round(g.track.w*scale)),Math.max(1,Math.round(g.track.h*scale)),Bitmap.Config.ARGB_8888);
         bitmap.setDensity(context.getResources().getDisplayMetrics().densityDpi);
         Canvas c=new Canvas(bitmap);c.scale(scale,scale);c.translate(-g.track.x,-g.track.y);
-        new WidgetRenderer(c,g,state).icons();
+        new WidgetRenderer(c,g,state,true).icons();
         return bitmap;
     }
     static Bitmap controlKnob(Context context,WidgetGeometry g,WidgetSnapshot state,float position,float scale) {
         Bitmap bitmap=Bitmap.createBitmap(Math.max(1,Math.round(g.track.w*scale)),Math.max(1,Math.round(g.track.h*scale)),Bitmap.Config.ARGB_8888);
         bitmap.setDensity(context.getResources().getDisplayMetrics().densityDpi);
         Canvas c=new Canvas(bitmap);c.scale(scale,scale);c.translate(-g.track.x,-g.track.y);
-        if(state.hasSelection())new WidgetRenderer(c,g,state).knob(position);
+        if(state.hasSelection())new WidgetRenderer(c,g,state,true).knob(position);
         return bitmap;
     }
-    private WidgetRenderer(Canvas canvas,WidgetGeometry g,WidgetSnapshot state) { this.canvas=canvas;this.g=g;this.state=state; }
+    private final boolean noiseControls;
+    private WidgetRenderer(Canvas canvas,WidgetGeometry g,WidgetSnapshot state,boolean noiseControls) { this.canvas=canvas;this.g=g;this.state=state;this.noiseControls=noiseControls; }
     private RectF rect(WidgetGeometry.Box b) { return new RectF(b.x,b.y,b.x+b.w,b.y+b.h); }
     private void color(int value) { paint.setShader(null);paint.setStyle(Paint.Style.FILL);paint.setColor(value);paint.setAlpha(Color.alpha(value)); }
     private void stroke(float width,int value) { color(value);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(width); }
@@ -93,7 +94,8 @@ final class WidgetRenderer {
         }
         status();
         ring(g.left,state.left,state.leftCharging);ring(g.right,state.right,state.rightCharging);
-        control(position,localSlider);
+        // Clip has no noise control, so the slider row is left out entirely.
+        if(noiseControls) control(position,localSlider);
     }
     private void status() {
         WidgetGeometry.Box b=g.status;

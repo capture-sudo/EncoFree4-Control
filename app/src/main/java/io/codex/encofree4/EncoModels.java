@@ -23,6 +23,7 @@ final class EncoModels {
     private static final String[] NAMES = {
             "encofree4",
             "encox4",
+            "encoclip",
     };
 
     private EncoModels() {
@@ -49,6 +50,20 @@ final class EncoModels {
 
     /** Colour keys for the X4 artwork, cycled by the panel's colour swatch. */
     static final String[] X4_COLORS = {"white", "purple", "pink"};
+    /** Clip ships in two colours; it shares the swatch but not the X4 palette. */
+    static final String[] CLIP_COLORS = {"grey", "sea"};
+
+    /** Colour keys offered for a model; models without artwork return a single entry. */
+    static String[] colorsFor(String deviceName) {
+        String normalized = normalize(deviceName);
+        if (normalized.contains("encoclip")) {
+            return CLIP_COLORS;
+        }
+        if (normalized.contains("encox4")) {
+            return X4_COLORS;
+        }
+        return new String[]{X4_COLORS[0]};
+    }
 
     /**
      * Model artwork. X4 has its own drawing per colour and per state: the open case while
@@ -56,7 +71,15 @@ final class EncoModels {
      * shapes, so a colour always maps to exactly one earbuds image and one case image.
      */
     static int deviceImage(String deviceName, String color, boolean inCase) {
-        if (!normalize(deviceName).contains("encox4")) {
+        String normalized = normalize(deviceName);
+        if (normalized.contains("encoclip")) {
+            boolean sea = "sea".equals(color);
+            if (inCase) {
+                return sea ? R.drawable.enco_clip_sea_case : R.drawable.enco_clip_grey_case;
+            }
+            return sea ? R.drawable.enco_clip_sea_buds : R.drawable.enco_clip_grey_buds;
+        }
+        if (!normalized.contains("encox4")) {
             return R.drawable.enco_device;
         }
         boolean pink = "pink".equals(color);
@@ -82,5 +105,13 @@ final class EncoModels {
     /** Adaptive is a separate major mode only on the model verified to expose it. */
     static boolean hasAdaptiveMode(String deviceName) {
         return normalize(deviceName).contains("encox4");
+    }
+
+    /**
+     * Clip is an open-ear clip model with no noise control at all, so the panel and the
+     * widget hide that entire section. Unknown names keep the section visible.
+     */
+    static boolean hasNoiseControl(String deviceName) {
+        return !normalize(deviceName).contains("encoclip");
     }
 }
