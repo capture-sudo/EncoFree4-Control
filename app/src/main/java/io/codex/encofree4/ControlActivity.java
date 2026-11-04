@@ -131,6 +131,8 @@ public final class ControlActivity extends Activity implements EncoController.Li
     private BatteryIndicatorView batteryCase;
     private boolean bothEarbudsInCase;
     private TextView transparencyButton;
+    private TextView adaptiveButton;
+    private int noiseDepth = 1;
     private int confirmedDepth = -1;
     private TextView ancButton;
     private TextView offButton;
@@ -804,18 +806,26 @@ public final class ControlActivity extends Activity implements EncoController.Li
                 getString(R.string.noise_cancel),
                 EncoProtocol.MODE_ANC
         );
+        adaptiveButton = noiseButton(
+                R.drawable.ic_anc,
+                getString(R.string.adaptive),
+                EncoProtocol.MODE_ADAPTIVE
+        );
         offButton = noiseButton(
                 R.drawable.ic_noise_off,
                 getString(R.string.noise_off),
                 EncoProtocol.MODE_OFF
         );
-        modeButtons = new TextView[]{offButton, transparencyButton, ancButton};
-        // Long press mirrors the earbud touch gesture across the four major modes.
-        ancButton.setOnLongClickListener(view -> cycleNoiseMode());
+        modeButtons = new TextView[]{offButton, transparencyButton, ancButton, adaptiveButton};
+        // Long press on the cancellation button walks the four cancellation steps.
+        ancButton.setOnLongClickListener(view -> cycleNoiseDepth());
 
-        selector.addView(transparencyButton, weightedButton(0));
-        selector.addView(ancButton, weightedButton(1));
-        selector.addView(offButton, weightedButton(2));
+        // Display order: cancellation, adaptive, transparency, off. Each button keeps the
+        // mode it was created with, so the order only affects placement, not behaviour.
+        selector.addView(ancButton, weightedButton(0));
+        selector.addView(adaptiveButton, weightedButton(1));
+        selector.addView(transparencyButton, weightedButton(2));
+        selector.addView(offButton, weightedButton(3));
         section.addView(selector, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dp(82)
@@ -888,6 +898,8 @@ public final class ControlActivity extends Activity implements EncoController.Li
         button.setGravity(Gravity.CENTER);
         button.setCompoundDrawablePadding(dp(6));
         button.setPadding(dp(6), dp(12), dp(6), dp(12));
+        // Keep the long-press for step cycling instead of the system text picker.
+        button.setTextIsSelectable(false);
         setButtonIcon(button, iconRes, COLOR_CAPSULE_UNSELECTED_FG);
         button.setOnClickListener(view -> requestNoiseMode(mode));
         return button;
@@ -911,26 +923,14 @@ public final class ControlActivity extends Activity implements EncoController.Li
         mainHandler.postDelayed(modeTimeoutTask, MODE_CONFIRM_TIMEOUT_MS);
     }
 
-    /**
-     * Long-press handler on the cancellation button, mirroring the earbud's own
-     * long-press gesture: cancellation → adaptive → transparency → off → cancellation.
-     */
-    private boolean cycleNoiseMode() {
+    /** Long-press handler on the cancellation button: walks the four cancellation steps. */
+    private boolean cycleNoiseDepth() {
         if (!canRender() || !connected || controller == null) {
             return true;
         }
-        if (state.confirmedMode == EncoProtocol.MODE_OFF) {
-            requestNoiseMode(EncoProtocol.MODE_ANC);
-            Toast.makeText(this, getString(R.string.noise_cancel), Toast.LENGTH_SHORT).show();
-        } else if (state.confirmedMode == EncoProtocol.MODE_ANC) {
-            requestNoiseMode(EncoProtocol.MODE_ADAPTIVE);
-            Toast.makeText(this, getString(R.string.adaptive), Toast.LENGTH_SHORT).show();
-        } else if (state.confirmedMode == EncoProtocol.MODE_ADAPTIVE) {
-            requestNoiseMode(EncoProtocol.MODE_TRANSPARENCY);
-            Toast.makeText(this, getString(R.string.transparency), Toast.LENGTH_SHORT).show();
-        } else {
-            requestNoiseMode(EncoProtocol.MODE_OFF);
-            Toast.makeText(this, getString(R.string.noise_off), Toast.LENGTH_SHORT).show();
+        noiseDepth = noiseDepth >= 4 ? 1 : noiseDepth + 1;
+        if (controller.setNoiseDepth(noiseDepth)) {
+            Toast.makeText(this, depthLabel(noiseDepth), Toast.LENGTH_SHORT).show();
         }
         return true;
     }
@@ -964,11 +964,13 @@ public final class ControlActivity extends Activity implements EncoController.Li
         int[] values = {
                 EncoProtocol.MODE_OFF,
                 EncoProtocol.MODE_TRANSPARENCY,
-                EncoProtocol.MODE_ANC
+                EncoProtocol.MODE_ANC,
+                EncoProtocol.MODE_ADAPTIVE
         };
         int[] icons = {
                 R.drawable.ic_noise_off,
                 R.drawable.ic_transparency,
+                R.drawable.ic_anc,
                 R.drawable.ic_anc
         };
         renderModeTag();
@@ -1015,7 +1017,7 @@ public final class ControlActivity extends Activity implements EncoController.Li
             case CURRENT:
                 noiseModeSummary.setText(
                         state.confirmedMode == EncoProtocol.MODE_ANC && confirmedDepth > 0
-                                ? getString(R.string.mode_current, depthLabel(confirmedDepth))
+                                ? getString(R.string.mode_current_cancel, depthLabel(confirmedDepth))
                                 : getString(R.string.mode_current, modeName(state.confirmedMode)));
                 break;
             case READ_FAILED:
@@ -1302,7 +1304,7 @@ public final class ControlActivity extends Activity implements EncoController.Li
                 1f
         );
         int left = index == 0 ? 0 : dp(5);
-        int right = index == 2 ? 0 : dp(5);
+        int right = index == 3 ? 0 : dp(5);
         params.setMargins(left, 0, right, 0);
         return params;
     }

@@ -36,11 +36,11 @@
     <string name="settings_unavailable">无法打开设置，请从系统设置中进入</string>
     <string name="mode_switching">切换中 · %1$s</string>
     <string name="mode_current">当前 · %1$s</string>
-    <string name="mode_current_depth">当前 · %1$s · 档%2$d</string>
-    <string name="depth_1">深度降噪</string>
+    <string name="mode_current_cancel">当前 · 降噪 · %1$s</string>
+    <string name="depth_1">深度降噪（实时计算）</string>
     <string name="depth_2">中度降噪</string>
     <string name="depth_3">轻度降噪</string>
-    <string name="depth_4">智能切换</string>
+    <string name="depth_4">自适应</string>
     <string name="mode_reading">正在读取当前模式</string>
     <string name="mode_read_failed_tag">当前模式未读取</string>
     <string name="mode_read_failed">未读到耳机当前模式，请刷新</string>
