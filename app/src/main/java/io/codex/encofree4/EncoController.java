@@ -50,8 +50,6 @@ final class EncoController {
     /** Standard SPP, present on every Enco model we have seen. */
     private static final UUID STANDARD_SPP_UUID =
             UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    /** Channels swept for models that hide their RFCOMM channel from SDP. */
-    private static final int[] RFCOMM_SCAN = {1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16};
     private static final int MAX_AUTOMATIC_RETRIES = 2;
 
     interface Listener {
@@ -287,9 +285,16 @@ final class EncoController {
             BluetoothDevice device = null;
             BluetoothSocket newSocket = null;
             Exception lastError = null;
+            String unsupported = null;
             for (BluetoothDevice candidate : candidates) {
                 if (!isCurrent(token)) {
                     return;
+                }
+                String candidateName = candidate.getName();
+                if (candidateName != null && !EncoModels.supportsControl(candidateName)) {
+                    // Known to expose no classic SPP channel; fail fast instead of retrying.
+                    unsupported = candidateName;
+                    continue;
                 }
                 try {
                     newSocket = openControlSocket(candidate, token);
@@ -302,6 +307,10 @@ final class EncoController {
                 }
             }
             if (newSocket == null || device == null) {
+                if (unsupported != null) {
+                    fail(token, "该型号暂不支持控制：" + unsupported, false);
+                    return;
+                }
                 throw lastError == null ? new IOException("No control channel") : lastError;
             }
             // Remember the model we last talked to: widgets keep its artwork while the
@@ -363,11 +372,7 @@ final class EncoController {
     @SuppressLint("MissingPermission")
     private BluetoothSocket openControlSocket(BluetoothDevice device, long token) throws Exception {
         Exception lastError = null;
-        String deviceName = device.getName();
-        boolean clipDevice = deviceName != null
-                && EncoModels.normalize(deviceName).contains("encoclip");
-        int attempts = 7 + (clipDevice ? RFCOMM_SCAN.length : 0);
-        for (int attempt = 0; attempt < attempts; attempt++) {
+        for (int attempt = 0; attempt < 7; attempt++) {
             if (!isCurrent(token)) {
                 throw new IOException("Connection cancelled");
             }
@@ -384,13 +389,9 @@ final class EncoController {
                 } else if (attempt == 5) {
                     Method createChannel = BluetoothDevice.class.getMethod("createRfcommSocket", int.class);
                     candidate = (BluetoothSocket) createChannel.invoke(device, RFCOMM_CHANNEL);
-                } else if (attempt == 6) {
+                } else {
                     Method createChannel = BluetoothDevice.class.getMethod("createRfcommSocket", int.class);
                     candidate = (BluetoothSocket) createChannel.invoke(device, 3);
-                } else {
-                    // Clip hides its RFCOMM channel from SDP, so sweep the common ones.
-                    Method createChannel = BluetoothDevice.class.getMethod("createRfcommSocket", int.class);
-                    candidate = (BluetoothSocket) createChannel.invoke(device, RFCOMM_SCAN[attempt - 7]);
                 }
                 if (candidate == null) {
                     throw new IOException("No control socket");

@@ -114,4 +114,14 @@ final class EncoModels {
     static boolean hasNoiseControl(String deviceName) {
         return !normalize(deviceName).contains("encoclip");
     }
+
+    /**
+     * Whether the model exposes the classic SPP control channel this project talks to.
+     * Clip answers on none of the known service UUIDs or RFCOMM channels at firmware
+     * {@code 116.116.100}, so it is recognised and drawn but not controllable; skipping it
+     * up front avoids making the user wait through every fallback.
+     */
+    static boolean supportsControl(String deviceName) {
+        return !normalize(deviceName).contains("encoclip");
+    }
 }
