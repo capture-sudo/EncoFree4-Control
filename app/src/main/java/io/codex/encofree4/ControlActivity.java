@@ -1,6 +1,10 @@
 package io.codex.encofree4;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
@@ -132,7 +136,6 @@ public final class ControlActivity extends Activity implements EncoController.Li
     private boolean bothEarbudsInCase;
     private TextView transparencyButton;
     private TextView adaptiveButton;
-    private int noiseDepth = 1;
     private int confirmedDepth = -1;
     private TextView ancButton;
     private TextView offButton;
@@ -646,7 +649,7 @@ public final class ControlActivity extends Activity implements EncoController.Li
 
         // 优先使用带温润高光与细腻阴影的高清渲染图 / 精致立体矢量图
         ImageView render = new ImageView(this);
-        render.setImageResource(R.drawable.enco_device);
+        render.setImageResource(EncoModels.deviceImage(currentDeviceName()));
         render.setScaleType(ImageView.ScaleType.FIT_CENTER);
         FrameLayout.LayoutParams renderParams = new FrameLayout.LayoutParams(
                 dp(142),
@@ -924,13 +927,39 @@ public final class ControlActivity extends Activity implements EncoController.Li
     }
 
     /** Long-press handler on the cancellation button: walks the four cancellation steps. */
+    /**
+     * Name of the bonded earbud, used to pick the matching artwork. Returns null when no
+     * supported model is bonded, in which case the generic drawing is kept.
+     */
+    @SuppressLint("MissingPermission")
+    private String currentDeviceName() {
+        try {
+            BluetoothManager manager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
+            BluetoothAdapter adapter = manager == null ? null : manager.getAdapter();
+            if (adapter == null) {
+                return null;
+            }
+            for (BluetoothDevice device : adapter.getBondedDevices()) {
+                String name = device.getName();
+                if (EncoModels.isSupported(name)) {
+                    return name;
+                }
+            }
+        } catch (SecurityException ignored) {
+            // Without the permission the panel keeps the generic artwork.
+        }
+        return null;
+    }
+
     private boolean cycleNoiseDepth() {
         if (!canRender() || !connected || controller == null) {
             return true;
         }
-        noiseDepth = noiseDepth >= 4 ? 1 : noiseDepth + 1;
-        if (controller.setNoiseDepth(noiseDepth)) {
-            Toast.makeText(this, depthLabel(noiseDepth), Toast.LENGTH_SHORT).show();
+        // Step from the step the earbud actually reports, so the first long press always
+        // moves one step instead of repeating the current one.
+        int next = confirmedDepth >= 1 && confirmedDepth < 4 ? confirmedDepth + 1 : 1;
+        if (controller.setNoiseDepth(next)) {
+            Toast.makeText(this, depthLabel(next), Toast.LENGTH_SHORT).show();
         }
         return true;
     }

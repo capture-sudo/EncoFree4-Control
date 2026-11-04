@@ -46,4 +46,11 @@ final class EncoModels {
         }
         return false;
     }
+
+    /** Model artwork for the panel; unknown names fall back to the generic drawing. */
+    static int deviceImage(String deviceName) {
+        return normalize(deviceName).contains("encox4")
+                ? R.drawable.enco_x4_device
+                : R.drawable.enco_device;
+    }
 }
