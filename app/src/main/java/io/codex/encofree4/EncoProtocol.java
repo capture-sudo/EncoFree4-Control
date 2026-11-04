@@ -290,6 +290,9 @@ final class EncoProtocol {
             case 8:
                 return MODE_TRANSPARENCY;
             default:
+                // Unknown bitmap position: do not guess between the three panel modes,
+                // so the panel keeps showing "not read" instead of a wrong mode. The
+                // raw frame is visible in the EncoProbe log for mapping a new model.
                 return -1;
         }
     }

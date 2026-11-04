@@ -15,9 +15,10 @@
     <string name="battery_case">充电盒</string>
     <string name="battery_unknown">电量未读取</string>
     <string name="battery_charging">充电中</string>
-    <string name="app_name">Enco Free4 控制</string>
-    <string name="tile_label">Enco Free4</string>
-    <string name="device_name">OPPO Enco Free4</string>
+    <string name="app_name">Enco 控制</string>
+    <string name="tile_label">Enco</string>
+    <string name="device_name">OPPO Enco 耳机</string>
+    <string name="pair_hint">请先在系统蓝牙中配对并连接 Enco 耳机</string>
     <string name="connecting">正在连接…</string>
     <string name="connection_failed">连接失败</string>
     <string name="permission_needed">需要“附近的设备”权限才能控制耳机</string>
@@ -39,8 +40,8 @@
     <string name="mode_read_failed">未读到耳机当前模式，请刷新</string>
     <string name="refresh_mode">刷新</string>
     <string name="panel_paused">面板已暂停，返回后重新连接</string>
-    <string name="widget_large_label">Enco Free4 · 2×2</string>
-    <string name="widget_compact_label">Enco Free4 · 2×1</string>
+    <string name="widget_large_label">Enco · 2×2</string>
+    <string name="widget_compact_label">Enco · 2×1</string>
     <string name="widget_large_description">耳机、电量与降噪控制，透明玻璃大卡片</string>
     <string name="widget_compact_description">电量、连接与降噪控制，透明玻璃横向卡片</string>
 </resources>

@@ -19,7 +19,6 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -30,6 +29,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 final class EncoController {
     private static final String TAG = "EncoFree4";
+
+    /**
+     * Dumps every TX/RX frame to logcat under {@link #PROBE_TAG} so a new model can be
+     * characterised with {@code adb logcat -s EncoProbe}. Frames contain commands,
+     * battery levels and mode bitmaps; they never contain Bluetooth addresses.
+     * Flip to {@code false} once the model is verified.
+     */
+    static final boolean PROBE = true;
+    private static final String PROBE_TAG = "EncoProbe";
     private static final UUID SERVICE_UUID = UUID.fromString(
             "0000079A-D102-11E1-9B23-00025B00A5A5"
     );
@@ -225,7 +233,7 @@ final class EncoController {
             }
             BluetoothDevice device = findDevice(adapter);
             if (device == null) {
-                fail(token, "请先完成 OPPO Enco Free4 蓝牙配对", false);
+                fail(token, context.getString(R.string.pair_hint), false);
                 return;
             }
             BluetoothSocket newSocket = openControlSocket(device, token);
@@ -378,13 +386,16 @@ final class EncoController {
             if (name == null) {
                 continue;
             }
-            String normalized = name.trim().toLowerCase(Locale.ROOT);
-            if (normalized.contains("enco free4")) {
+            if (EncoModels.isSupported(name)) {
                 return device;
             }
-            if (fallback == null && normalized.contains("free4")
-                    && (normalized.contains("enco") || normalized.contains("oppo"))) {
-                fallback = device;
+            if (fallback == null) {
+                // Loose match for firmware variants that append a suffix to the model name.
+                String normalized = EncoModels.normalize(name);
+                if ((normalized.contains("free4") || normalized.contains("x4"))
+                        && (normalized.contains("enco") || normalized.contains("oppo"))) {
+                    fallback = device;
+                }
             }
         }
         return fallback;
@@ -436,6 +447,9 @@ final class EncoController {
         if (!isActive(target)) {
             throw new IOException("Session expired");
         }
+        if (PROBE) {
+            Log.d(PROBE_TAG, "TX " + hex(frame));
+        }
         // This stream belongs only to target; it can never become a later session's stream.
         target.output.write(frame);
         target.output.flush();
@@ -448,6 +462,9 @@ final class EncoController {
                     byte[] frame = readFrame(target.input);
                     if (frame == null) {
                         break;
+                    }
+                    if (PROBE) {
+                        Log.d(PROBE_TAG, "RX " + hex(frame));
                     }
                     EncoProtocol.Battery battery = EncoProtocol.parseBattery(frame);
                     if (battery != null) {
@@ -630,5 +647,13 @@ final class EncoController {
             frame.write(current);
         }
         return frame.toByteArray();
+    }
+
+    private static String hex(byte[] data) {
+        StringBuilder out = new StringBuilder(data.length * 3);
+        for (byte value : data) {
+            out.append(String.format("%02X ", value));
+        }
+        return out.toString().trim();
     }
 }

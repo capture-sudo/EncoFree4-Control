@@ -68,7 +68,7 @@ final class WidgetRenderer {
         paint.setShader(new LinearGradient(0,0,w,h,new int[]{0xBFFFFFFF,0x10FFFFFF,0x65FFFFFF},null,Shader.TileMode.CLAMP));
         canvas.drawRoundRect(new RectF(1.3f,1.3f,w-1.3f,h-1.3f),r-1,r-1,paint);paint.setShader(null);
         if(!g.compact) {
-            text("Enco Free4",g.title,g.titleSize,0xFFFFFFFF,false);
+            text("Enco",g.title,g.titleSize,0xFFFFFFFF,false);
             if(device!=null) {
                 float ratio=(float)device.getWidth()/device.getHeight();
                 float imageH=Math.min(g.photo.h,g.photo.w/ratio),imageW=imageH*ratio;
