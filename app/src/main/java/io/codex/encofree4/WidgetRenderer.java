@@ -18,6 +18,7 @@ import android.text.TextPaint;
 /** Native Canvas artwork sent through a supported RemoteViews ImageView, never a WebView. */
 final class WidgetRenderer {
     private static Bitmap device;
+    private static String deviceKey;
     private final Canvas canvas;
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final WidgetGeometry g;
@@ -35,10 +36,15 @@ final class WidgetRenderer {
         Bitmap bitmap=Bitmap.createBitmap(Math.max(1,Math.round(g.width*scale)),Math.max(1,Math.round(g.height*scale)),Bitmap.Config.ARGB_8888);
         bitmap.setDensity(context.getResources().getDisplayMetrics().densityDpi);
         Canvas c=new Canvas(bitmap); c.scale(scale,scale);
-        if(device==null) {
-            String name=context.getSharedPreferences("enco_widgets",Context.MODE_PRIVATE).getString("device_name",null);
-            String color=context.getSharedPreferences("enco_widgets",Context.MODE_PRIVATE).getString("device_color","white");
-            device=BitmapFactory.decodeResource(context.getResources(),EncoModels.deviceImage(name,color,false));
+        String artName=context.getSharedPreferences("enco_widgets",Context.MODE_PRIVATE).getString("device_name",null);
+        String artColor=context.getSharedPreferences("enco_widgets",Context.MODE_PRIVATE).getString("device_color","white");
+        // Earbuds only charge inside the case, so the charging flags tell us which
+        // artwork to draw and the key makes the cache follow that state.
+        boolean artInCase=state.leftCharging&&state.rightCharging&&state.left>=0&&state.right>=0;
+        String artKey=artName+"|"+artColor+"|"+artInCase;
+        if(device==null||!artKey.equals(deviceKey)) {
+            device=BitmapFactory.decodeResource(context.getResources(),EncoModels.deviceImage(artName,artColor,artInCase));
+            deviceKey=artKey;
         }
         new WidgetRenderer(c,g,state).draw(position,localSlider);
         return bitmap;
