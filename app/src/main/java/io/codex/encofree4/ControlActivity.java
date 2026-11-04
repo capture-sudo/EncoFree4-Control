@@ -139,7 +139,7 @@ public final class ControlActivity extends Activity implements EncoController.Li
     private ImageView deviceArt;
     private TextView earLabel;
     private View colorSwatch;
-    private boolean leftInBox, rightInBox, hasEarState;
+    private boolean leftInBox, rightInBox, hasEarState, earDetailSeen;
     private static final int[] COLOR_DOTS = {0xFFF4F4F4, 0xFFB7B2C7, 0xFFF0D2CC};
     private int colorIndex;
     private int confirmedDepth = -1;
@@ -303,6 +303,7 @@ public final class ControlActivity extends Activity implements EncoController.Li
         leftInBox = left;
         rightInBox = right;
         hasEarState = true;
+        earDetailSeen = true;
         renderEarState();
         renderDeviceArt();
     }
@@ -314,6 +315,20 @@ public final class ControlActivity extends Activity implements EncoController.Li
         }
         state.mergeBattery(battery);
         renderBattery();
+        // The firmware pushes an ear/case event only when something changes, so a fresh
+        // connection leaves the state unknown. Charging is a reliable substitute: earbuds
+        // only charge while they sit in the case. A real event still wins.
+        if (!earDetailSeen && battery.count >= 2) {
+            boolean left = battery.left >= 0 && battery.leftCharging;
+            boolean right = battery.right >= 0 && battery.rightCharging;
+            if (!hasEarState || left != leftInBox || right != rightInBox) {
+                leftInBox = left;
+                rightInBox = right;
+                hasEarState = true;
+                renderEarState();
+                renderDeviceArt();
+            }
+        }
     }
 
     @Override
