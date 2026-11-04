@@ -26,6 +26,11 @@ final class WidgetRenderer {
     static Bitmap render(Context context, WidgetGeometry g, WidgetSnapshot state, float position, float scale) {
         return render(context,g,state,position,scale,false);
     }
+    /** Drops the cached artwork so the next render picks up a colour change. */
+    static void invalidateDevice() {
+        device = null;
+    }
+
     static Bitmap render(Context context, WidgetGeometry g, WidgetSnapshot state, float position, float scale, boolean localSlider) {
         Bitmap bitmap=Bitmap.createBitmap(Math.max(1,Math.round(g.width*scale)),Math.max(1,Math.round(g.height*scale)),Bitmap.Config.ARGB_8888);
         bitmap.setDensity(context.getResources().getDisplayMetrics().densityDpi);

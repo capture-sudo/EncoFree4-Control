@@ -757,7 +757,7 @@ public final class ControlActivity extends Activity implements EncoController.Li
                 .putString("device_color", deviceColor())
                 .apply();
         // The widget caches its decoded artwork, so drop it and refresh the widgets.
-        WidgetRenderer.device = null;
+        WidgetRenderer.invalidateDevice();
         EncoWidgets.scheduleUpdate(this);
     }
 
