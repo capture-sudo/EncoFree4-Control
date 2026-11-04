@@ -137,7 +137,9 @@ public final class ControlActivity extends Activity implements EncoController.Li
     private TextView transparencyButton;
     private TextView adaptiveButton;
     private ImageView deviceArt;
+    private TextView earLabel;
     private View colorSwatch;
+    private boolean leftInBox, rightInBox, hasEarState;
     private static final int[] COLOR_DOTS = {0xFFF4F4F4, 0xFFB7B2C7, 0xFFF0D2CC};
     private int colorIndex;
     private int confirmedDepth = -1;
@@ -281,10 +283,27 @@ public final class ControlActivity extends Activity implements EncoController.Li
 
     /** Hides features the connected model does not expose, and refreshes the artwork. */
     private void applyModelFeatures() {
+        String name = currentDeviceName();
+        if (name != null) {
+            getSharedPreferences("enco_widgets", MODE_PRIVATE)
+                    .edit().putString("device_name", name).apply();
+        }
         if (adaptiveButton != null) {
             adaptiveButton.setVisibility(
-                    EncoModels.hasAdaptiveMode(currentDeviceName()) ? View.VISIBLE : View.GONE);
+                    EncoModels.hasAdaptiveMode(name) ? View.VISIBLE : View.GONE);
         }
+        renderDeviceArt();
+    }
+
+    @Override
+    public void onEarDetail(boolean left, boolean right) {
+        if (!canRender() || !connected) {
+            return;
+        }
+        leftInBox = left;
+        rightInBox = right;
+        hasEarState = true;
+        renderEarState();
         renderDeviceArt();
     }
 
@@ -675,6 +694,17 @@ public final class ControlActivity extends Activity implements EncoController.Li
         stage.addView(deviceArt, renderParams);
         renderDeviceArt();
 
+        earLabel = new TextView(this);
+        earLabel.setTextSize(10f);
+        earLabel.setTextColor(0x99FFFFFF);
+        FrameLayout.LayoutParams earParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        earParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        stage.addView(earLabel, earParams);
+        renderEarState();
+
         // The headset never reports its colour, so the swatch lets the user pick it.
         colorSwatch = new View(this);
         FrameLayout.LayoutParams swatchParams = new FrameLayout.LayoutParams(dp(22), dp(22));
@@ -689,8 +719,22 @@ public final class ControlActivity extends Activity implements EncoController.Li
 
     private void renderDeviceArt() {
         if (deviceArt != null) {
-            deviceArt.setImageResource(EncoModels.deviceImage(currentDeviceName(), deviceColor()));
+            deviceArt.setImageResource(EncoModels.deviceImage(
+                    currentDeviceName(), deviceColor(), bothInCase()));
         }
+    }
+
+    private boolean bothInCase() {
+        return hasEarState && leftInBox && rightInBox;
+    }
+
+    private void renderEarState() {
+        if (earLabel == null) {
+            return;
+        }
+        earLabel.setText(hasEarState
+                ? "左耳 " + (leftInBox ? "在盒" : "佩戴") + " · 右耳 " + (rightInBox ? "在盒" : "佩戴")
+                : "");
     }
 
     private void renderSwatch() {
@@ -712,6 +756,9 @@ public final class ControlActivity extends Activity implements EncoController.Li
                 .edit()
                 .putString("device_color", deviceColor())
                 .apply();
+        // The widget caches its decoded artwork, so drop it and refresh the widgets.
+        WidgetRenderer.device = null;
+        EncoWidgets.scheduleUpdate(this);
     }
 
     private String deviceColor() {

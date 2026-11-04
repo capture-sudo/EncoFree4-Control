@@ -30,7 +30,11 @@ final class WidgetRenderer {
         Bitmap bitmap=Bitmap.createBitmap(Math.max(1,Math.round(g.width*scale)),Math.max(1,Math.round(g.height*scale)),Bitmap.Config.ARGB_8888);
         bitmap.setDensity(context.getResources().getDisplayMetrics().densityDpi);
         Canvas c=new Canvas(bitmap); c.scale(scale,scale);
-        if(device==null) device=BitmapFactory.decodeResource(context.getResources(),R.drawable.enco_device);
+        if(device==null) {
+            String name=context.getSharedPreferences("enco_widgets",Context.MODE_PRIVATE).getString("device_name",null);
+            String color=context.getSharedPreferences("enco_widgets",Context.MODE_PRIVATE).getString("device_color","white");
+            device=BitmapFactory.decodeResource(context.getResources(),EncoModels.deviceImage(name,color,false));
+        }
         new WidgetRenderer(c,g,state).draw(position,localSlider);
         return bitmap;
     }

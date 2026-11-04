@@ -57,6 +57,10 @@ final class EncoController {
          */
         default void onNoiseDepth(int depth) {
         }
+
+        /** Per-ear case state, so the panel can label each earbud separately. */
+        default void onEarDetail(boolean leftInBox, boolean rightInBox) {
+        }
     }
 
     private final Context context;
@@ -505,7 +509,12 @@ final class EncoController {
                     }
                     EncoProtocol.EarStatus earStatus = EncoProtocol.parseEarStatus(frame);
                     if (earStatus != null) {
-                        postSessionCallback(target, () -> listener.onEarStatus(earStatus.bothInCase()));
+                        final boolean leftInBox = earStatus.leftInBox;
+                        final boolean rightInBox = earStatus.rightInBox;
+                        postSessionCallback(target, () -> {
+                            listener.onEarStatus(earStatus.bothInCase());
+                            listener.onEarDetail(leftInBox, rightInBox);
+                        });
                     }
                     int mask = EncoProtocol.parseNoiseMask(frame);
                     if (mask > 0) {

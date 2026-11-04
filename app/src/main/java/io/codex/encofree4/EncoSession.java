@@ -22,6 +22,7 @@ final class EncoSession implements EncoController.Listener {
     private final PanelState state = new PanelState(-1);
     private EncoController controller;
     private boolean connected, connecting, keepingWidgets, bothInCase, refreshing;
+    private boolean leftInBox, rightInBox;
     private int noiseDepth = -1;
     private boolean interactive = true, pendingFromWidget;
     private String message = "已断开";
@@ -191,6 +192,14 @@ final class EncoSession implements EncoController.Listener {
         if (!connected) return;
         bothInCase = value;
         for (Client c : new ArrayList<>(clients)) if (!c.closed) c.listener.onEarStatus(value);
+    }
+    @Override public void onEarDetail(boolean leftInBox, boolean rightInBox) {
+        if (!connected) return;
+        this.leftInBox = leftInBox;
+        this.rightInBox = rightInBox;
+        for (Client c : new ArrayList<>(clients)) if (!c.closed) {
+            c.listener.onEarDetail(leftInBox, rightInBox);
+        }
     }
     @Override public void onNoiseMode(int mode) {
         if (!connected || !PanelState.validMode(mode)) return;

@@ -50,18 +50,33 @@ final class EncoModels {
     /** Colour keys for the X4 artwork, cycled by the panel's colour swatch. */
     static final String[] X4_COLORS = {"white", "purple", "pink"};
 
-    /** Model artwork for the panel; unknown names fall back to the generic drawing. */
-    static int deviceImage(String deviceName, String color) {
+    /**
+     * Model artwork. X4 has its own drawing per colour and per state: the open case while
+     * both earbuds sit inside, the bare earbuds otherwise. Colours never mix across the two
+     * shapes, so a colour always maps to exactly one earbuds image and one case image.
+     */
+    static int deviceImage(String deviceName, String color, boolean inCase) {
         if (!normalize(deviceName).contains("encox4")) {
             return R.drawable.enco_device;
         }
-        if ("purple".equals(color)) {
-            return R.drawable.enco_x4_device_purple;
+        boolean pink = "pink".equals(color);
+        boolean purple = "purple".equals(color);
+        if (inCase) {
+            if (pink) {
+                return R.drawable.enco_x4_pink_case;
+            }
+            if (purple) {
+                return R.drawable.enco_x4_purple_case;
+            }
+            return R.drawable.enco_x4_white_case;
         }
-        if ("pink".equals(color)) {
-            return R.drawable.enco_x4_device_pink;
+        if (pink) {
+            return R.drawable.enco_x4_pink_buds;
         }
-        return R.drawable.enco_x4_device_white;
+        if (purple) {
+            return R.drawable.enco_x4_purple_buds;
+        }
+        return R.drawable.enco_x4_white_buds;
     }
 
     /** Adaptive is a separate major mode only on the model verified to expose it. */
