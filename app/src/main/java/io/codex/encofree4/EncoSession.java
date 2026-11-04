@@ -52,6 +52,12 @@ final class EncoSession implements EncoController.Listener {
             replay(this);
         }
         boolean setNoiseMode(int mode) { return !closed && requestMode(mode, false); }
+
+        boolean setNoiseDepth(int depth) {
+            if (closed || !connected || controller == null) return false;
+            controller.setNoiseDepth(depth);
+            return true;
+        }
         void refreshNoiseMode() { if (!closed && controller != null) controller.refreshNoiseMode(); }
         void disconnect() { if (!closed) disconnectInternal(true); }
         void pausePanel() { if (!closed && !keepingWidgets) disconnectInternal(false); }

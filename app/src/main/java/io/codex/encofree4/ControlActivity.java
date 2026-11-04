@@ -131,6 +131,7 @@ public final class ControlActivity extends Activity implements EncoController.Li
     private BatteryIndicatorView batteryCase;
     private boolean bothEarbudsInCase;
     private TextView transparencyButton;
+    private int noiseDepth = 1;
     private TextView ancButton;
     private TextView offButton;
     private TextView[] modeButtons;
@@ -800,6 +801,8 @@ public final class ControlActivity extends Activity implements EncoController.Li
                 EncoProtocol.MODE_OFF
         );
         modeButtons = new TextView[]{offButton, transparencyButton, ancButton};
+        // Long press walks the firmware's four cancellation steps (state bitmap bits 4..7).
+        ancButton.setOnLongClickListener(view -> cycleNoiseDepth());
 
         selector.addView(transparencyButton, weightedButton(0));
         selector.addView(ancButton, weightedButton(1));
@@ -897,6 +900,19 @@ public final class ControlActivity extends Activity implements EncoController.Li
         renderMode(state.confirmedMode);
         mainHandler.removeCallbacks(modeTimeoutTask);
         mainHandler.postDelayed(modeTimeoutTask, MODE_CONFIRM_TIMEOUT_MS);
+    }
+
+    /** Long-press handler on the cancellation button: 1 → 2 → 3 → 4 → 1. */
+    private boolean cycleNoiseDepth() {
+        if (!canRender() || !connected || controller == null) {
+            return true;
+        }
+        noiseDepth = noiseDepth >= 4 ? 1 : noiseDepth + 1;
+        if (controller.setNoiseDepth(noiseDepth)) {
+            Toast.makeText(this, getString(R.string.noise_cancel) + " " + noiseDepth + " / 4",
+                    Toast.LENGTH_SHORT).show();
+        }
+        return true;
     }
 
     private void renderMode(int mode) {

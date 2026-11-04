@@ -176,6 +176,12 @@ connection, so the three-mode panel needs no model-specific branch.
 - Battery over `0x012F` → `0x0106` uses device types 1/2/3 and the same
   charging bit as Free4. The case entry disappears from the response once the
   earbuds are out of the case.
+- Cancellation exposes four steps. `0x0404` accepts the state bitmap bit directly:
+  `0x10`, `0x20`, `0x40` and `0x80` select bits 4, 5, 6 and 7, and the firmware
+  reports the same bit back through `0x010C` (`01 01`). The legacy `0x01`/`0x02`/`0x04`
+  values keep working, but `0x02` means "cancellation, keep the remembered step", so
+  a panel that only sends `0x02` cannot change or show the step. The three-state
+  mapping already folds bits 4..7 into cancellation.
 - The legacy `02 01` selector of `0x010C` returns a constant `0x0006`
   (bits 1 and 2) on X4 and does not describe the three-state mode. It most
   likely carries ANC depth/adaptive state; the write path for those submodes is
