@@ -136,6 +136,10 @@ public final class ControlActivity extends Activity implements EncoController.Li
     private boolean bothEarbudsInCase;
     private TextView transparencyButton;
     private TextView adaptiveButton;
+    private ImageView deviceArt;
+    private View colorSwatch;
+    private static final int[] COLOR_DOTS = {0xFFF4F4F4, 0xFFB7B2C7, 0xFFF0D2CC};
+    private int colorIndex;
     private int confirmedDepth = -1;
     private TextView ancButton;
     private TextView offButton;
@@ -270,6 +274,18 @@ public final class ControlActivity extends Activity implements EncoController.Li
             return;
         }
         renderConnection(isConnected, message);
+        if (isConnected) {
+            applyModelFeatures();
+        }
+    }
+
+    /** Hides features the connected model does not expose, and refreshes the artwork. */
+    private void applyModelFeatures() {
+        if (adaptiveButton != null) {
+            adaptiveButton.setVisibility(
+                    EncoModels.hasAdaptiveMode(currentDeviceName()) ? View.VISIBLE : View.GONE);
+        }
+        renderDeviceArt();
     }
 
     @Override
@@ -648,17 +664,69 @@ public final class ControlActivity extends Activity implements EncoController.Li
         stage.addView(ambientGlow, glowParams);
 
         // 优先使用带温润高光与细腻阴影的高清渲染图 / 精致立体矢量图
-        ImageView render = new ImageView(this);
-        render.setImageResource(EncoModels.deviceImage(currentDeviceName()));
-        render.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        colorIndex = loadDeviceColor();
+        deviceArt = new ImageView(this);
+        deviceArt.setScaleType(ImageView.ScaleType.FIT_CENTER);
         FrameLayout.LayoutParams renderParams = new FrameLayout.LayoutParams(
                 dp(142),
                 dp(132)
         );
         renderParams.gravity = Gravity.CENTER;
-        stage.addView(render, renderParams);
+        stage.addView(deviceArt, renderParams);
+        renderDeviceArt();
+
+        // The headset never reports its colour, so the swatch lets the user pick it.
+        colorSwatch = new View(this);
+        FrameLayout.LayoutParams swatchParams = new FrameLayout.LayoutParams(dp(22), dp(22));
+        swatchParams.gravity = Gravity.TOP | Gravity.START;
+        swatchParams.setMargins(dp(18), dp(18), 0, 0);
+        colorSwatch.setOnClickListener(view -> cycleDeviceColor());
+        stage.addView(colorSwatch, swatchParams);
+        renderSwatch();
 
         return stage;
+    }
+
+    private void renderDeviceArt() {
+        if (deviceArt != null) {
+            deviceArt.setImageResource(EncoModels.deviceImage(currentDeviceName(), deviceColor()));
+        }
+    }
+
+    private void renderSwatch() {
+        if (colorSwatch == null) {
+            return;
+        }
+        GradientDrawable dot = new GradientDrawable();
+        dot.setShape(GradientDrawable.OVAL);
+        dot.setColor(COLOR_DOTS[colorIndex]);
+        dot.setStroke(dp(1), 0x66FFFFFF);
+        colorSwatch.setBackground(dot);
+    }
+
+    private void cycleDeviceColor() {
+        colorIndex = (colorIndex + 1) % EncoModels.X4_COLORS.length;
+        renderDeviceArt();
+        renderSwatch();
+        getSharedPreferences("enco_widgets", MODE_PRIVATE)
+                .edit()
+                .putString("device_color", deviceColor())
+                .apply();
+    }
+
+    private String deviceColor() {
+        return EncoModels.X4_COLORS[colorIndex];
+    }
+
+    private int loadDeviceColor() {
+        String saved = getSharedPreferences("enco_widgets", MODE_PRIVATE)
+                .getString("device_color", EncoModels.X4_COLORS[0]);
+        for (int i = 0; i < EncoModels.X4_COLORS.length; i++) {
+            if (EncoModels.X4_COLORS[i].equals(saved)) {
+                return i;
+            }
+        }
+        return 0;
     }
 
     private View createBatteryRow() {

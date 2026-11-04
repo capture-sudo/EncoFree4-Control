@@ -47,10 +47,25 @@ final class EncoModels {
         return false;
     }
 
+    /** Colour keys for the X4 artwork, cycled by the panel's colour swatch. */
+    static final String[] X4_COLORS = {"white", "purple", "pink"};
+
     /** Model artwork for the panel; unknown names fall back to the generic drawing. */
-    static int deviceImage(String deviceName) {
-        return normalize(deviceName).contains("encox4")
-                ? R.drawable.enco_x4_device
-                : R.drawable.enco_device;
+    static int deviceImage(String deviceName, String color) {
+        if (!normalize(deviceName).contains("encox4")) {
+            return R.drawable.enco_device;
+        }
+        if ("purple".equals(color)) {
+            return R.drawable.enco_x4_device_purple;
+        }
+        if ("pink".equals(color)) {
+            return R.drawable.enco_x4_device_pink;
+        }
+        return R.drawable.enco_x4_device_white;
+    }
+
+    /** Adaptive is a separate major mode only on the model verified to expose it. */
+    static boolean hasAdaptiveMode(String deviceName) {
+        return normalize(deviceName).contains("encox4");
     }
 }
