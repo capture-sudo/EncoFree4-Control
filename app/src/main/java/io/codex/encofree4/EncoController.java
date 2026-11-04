@@ -275,10 +275,32 @@ final class EncoController {
                 fail(token, "蓝牙未开启", false);
                 return;
             }
-            BluetoothDevice device = findDevice(adapter);
-            if (device == null) {
+            List<BluetoothDevice> candidates = findCandidates(adapter);
+            if (candidates.isEmpty()) {
                 fail(token, context.getString(R.string.pair_hint), false);
                 return;
+            }
+            // Try each candidate in turn: a bonded but idle model may report as connected
+            // on a profile while its control channel is closed.
+            BluetoothDevice device = null;
+            BluetoothSocket newSocket = null;
+            Exception lastError = null;
+            for (BluetoothDevice candidate : candidates) {
+                if (!isCurrent(token)) {
+                    return;
+                }
+                try {
+                    newSocket = openControlSocket(candidate, token);
+                    device = candidate;
+                    break;
+                } catch (SecurityException error) {
+                    throw error;
+                } catch (Exception error) {
+                    lastError = error;
+                }
+            }
+            if (newSocket == null || device == null) {
+                throw lastError == null ? new IOException("No control channel") : lastError;
             }
             // Remember the model we last talked to: widgets keep its artwork while the
             // headset is disconnected instead of falling back to the generic drawing.
@@ -289,7 +311,6 @@ final class EncoController {
                         .putString("device_name", model)
                         .apply();
             }
-            BluetoothSocket newSocket = openControlSocket(device, token);
             Session established = new Session(token, newSocket);
             boolean accepted;
             synchronized (stateLock) {
@@ -439,9 +460,9 @@ final class EncoController {
     }
 
     @SuppressLint("MissingPermission")
-    private BluetoothDevice findDevice(BluetoothAdapter adapter) {
-        // Prefer a supported model that is actually connected: several Enco models may be
-        // bonded at once, and picking the wrong one makes the control channel fail.
+    private List<BluetoothDevice> findCandidates(BluetoothAdapter adapter) {
+        List<BluetoothDevice> result = new ArrayList<>();
+        // Connected models first, then everything else that is bonded.
         BluetoothManager manager =
                 (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         if (manager != null) {
@@ -450,8 +471,8 @@ final class EncoController {
                 try {
                     for (BluetoothDevice device : manager.getConnectedDevices(profile)) {
                         String name = device.getName();
-                        if (name != null && EncoModels.isSupported(name)) {
-                            return device;
+                        if (name != null && EncoModels.isSupported(name) && !result.contains(device)) {
+                            result.add(device);
                         }
                     }
                 } catch (RuntimeException ignored) {
@@ -459,26 +480,29 @@ final class EncoController {
                 }
             }
         }
-        Set<BluetoothDevice> bonded = adapter.getBondedDevices();
-        BluetoothDevice fallback = null;
-        for (BluetoothDevice device : bonded) {
+        BluetoothDevice loose = null;
+        for (BluetoothDevice device : adapter.getBondedDevices()) {
             String name = device.getName();
-            if (name == null) {
+            if (name == null || result.contains(device)) {
                 continue;
             }
             if (EncoModels.isSupported(name)) {
-                return device;
+                result.add(device);
+                continue;
             }
-            if (fallback == null) {
+            if (loose == null) {
                 // Loose match for firmware variants that append a suffix to the model name.
                 String normalized = EncoModels.normalize(name);
                 if ((normalized.contains("free4") || normalized.contains("x4"))
                         && (normalized.contains("enco") || normalized.contains("oppo"))) {
-                    fallback = device;
+                    loose = device;
                 }
             }
         }
-        return fallback;
+        if (loose != null) {
+            result.add(loose);
+        }
+        return result;
     }
 
     private interface IoTask {
