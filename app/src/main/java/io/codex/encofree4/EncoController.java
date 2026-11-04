@@ -44,6 +44,12 @@ final class EncoController {
             "0000079A-D102-11E1-9B23-00025B00A5A5"
     );
     private static final int RFCOMM_CHANNEL = 15;
+    /** Clip advertises this placeholder UUID next to the OPPO one. */
+    private static final UUID CLIP_SERVICE_UUID =
+            UUID.fromString("99999999-9999-9999-9999-999999999999");
+    /** Standard SPP, present on every Enco model we have seen. */
+    private static final UUID STANDARD_SPP_UUID =
+            UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static final int MAX_AUTOMATIC_RETRIES = 2;
 
     interface Listener {
@@ -334,7 +340,7 @@ final class EncoController {
     @SuppressLint("MissingPermission")
     private BluetoothSocket openControlSocket(BluetoothDevice device, long token) throws Exception {
         Exception lastError = null;
-        for (int attempt = 0; attempt < 4; attempt++) {
+        for (int attempt = 0; attempt < 7; attempt++) {
             if (!isCurrent(token)) {
                 throw new IOException("Connection cancelled");
             }
@@ -344,9 +350,17 @@ final class EncoController {
                     candidate = device.createRfcommSocketToServiceRecord(SERVICE_UUID);
                 } else if (attempt == 2) {
                     candidate = device.createInsecureRfcommSocketToServiceRecord(SERVICE_UUID);
-                } else {
+                } else if (attempt == 3) {
+                    candidate = device.createRfcommSocketToServiceRecord(CLIP_SERVICE_UUID);
+                } else if (attempt == 4) {
+                    candidate = device.createRfcommSocketToServiceRecord(STANDARD_SPP_UUID);
+                } else if (attempt == 5) {
                     Method createChannel = BluetoothDevice.class.getMethod("createRfcommSocket", int.class);
                     candidate = (BluetoothSocket) createChannel.invoke(device, RFCOMM_CHANNEL);
+                } else {
+                    // SDP may hide the channel; try the low channels some firmware uses.
+                    Method createChannel = BluetoothDevice.class.getMethod("createRfcommSocket", int.class);
+                    candidate = (BluetoothSocket) createChannel.invoke(device, 3);
                 }
                 if (candidate == null) {
                     throw new IOException("No control socket");
