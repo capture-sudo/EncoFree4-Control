@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -425,6 +426,21 @@ final class EncoController {
 
     @SuppressLint("MissingPermission")
     private BluetoothDevice findDevice(BluetoothAdapter adapter) {
+        // Prefer a supported model that is actually connected: several Enco models may be
+        // bonded at once, and picking the wrong one makes the control channel fail.
+        BluetoothManager manager =
+                (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        if (manager != null) {
+            int[] profiles = {BluetoothProfile.A2DP, BluetoothProfile.HEADSET};
+            for (int profile : profiles) {
+                for (BluetoothDevice device : manager.getConnectedDevices(profile)) {
+                    String name = device.getName();
+                    if (name != null && EncoModels.isSupported(name)) {
+                        return device;
+                    }
+                }
+            }
+        }
         Set<BluetoothDevice> bonded = adapter.getBondedDevices();
         BluetoothDevice fallback = null;
         for (BluetoothDevice device : bonded) {
