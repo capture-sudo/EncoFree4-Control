@@ -158,6 +158,31 @@ final class EncoController {
         }
     }
 
+    /**
+     * Selects one of the four cancellation steps the firmware exposes.
+     *
+     * <p>The wire value is the state bitmap bit itself: bits 4..7 are the four levels,
+     * while the legacy value used by {@link #setNoiseMode} enters cancellation and keeps
+     * the remembered level. An explicit level does not change the three-state result, so
+     * the panel keeps showing cancellation.
+     */
+    void setNoiseDepth(int depth) {
+        final int mask = 1 << (3 + Math.max(1, Math.min(4, depth)));
+        synchronized (stateLock) {
+            if (closed || userDisconnected || session == null) {
+                return;
+            }
+            Session target = session;
+            ioExecutor.execute(() -> runSessionTask(target, () -> {
+                send(target, EncoProtocol.singleFrame(
+                        EncoProtocol.CMD_SET_NOISE_MODE,
+                        new byte[]{0x01, 0x01, (byte) mask},
+                        target.nextSequence()));
+                scheduleSessionTask(target, () -> queryNoiseMode(target), 450);
+            }));
+        }
+    }
+
     void refreshNoiseMode() {
         synchronized (stateLock) {
             if (closed || userDisconnected || session == null) {
@@ -692,7 +717,7 @@ final class EncoController {
         }
         // Write sweep: probe candidate mode values the three-state panel never sends,
         // then read the bitmap back and finally restore cancellation.
-        int[] candidates = {0x08, 0x10, 0x20, 0x40};
+        int[] candidates = {0x08, 0x10, 0x20, 0x40, 0x80};
         for (int candidate : candidates) {
             if (!isActive(target)) {
                 return;
